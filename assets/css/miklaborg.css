@@ -277,7 +277,10 @@ body:has(.cta) .ft{margin-top:0}
 .oh-arrow{margin-top:auto;align-self:flex-end;flex:none;width:3.2rem;min-width:28px;height:3.2rem;min-height:28px;display:grid;place-items:center;border:var(--border-line-transparent)}
 .oh-ctrl{display:flex;gap:.8rem;margin-top:1rem}
 .oh-btn{width:max(36px,4rem);height:max(36px,4rem);display:grid;place-items:center;border:var(--border-line-transparent);color:#fff;border-radius:0 var(--border-radius-s)}
-.oh-btn:first-child .arr{transform:rotate(-90deg)}.oh-btn:last-child .arr{transform:rotate(90deg)}
+/* previous points LEFT (a step back), next points RIGHT; explicit rotation, not mirrored by direction */
+.oh-btn[data-oh-prev] .arr{transform:rotate(180deg)}
+.oh-btn{transition:background-color var(--transition-default) var(--transition-speed),color var(--transition-default) var(--transition-speed)}
+@media (hover:hover) and (pointer:fine){.oh-btn:hover{background:#fff;color:var(--dark-blue)}}
 @media (max-width:650px){
   .hero-inner{grid-template-columns:1fr;grid-template-areas:"left" "right" "cta";gap:3rem}
   .hero-p{display:none}.hero-left{max-width:24.5rem;min-width:min(100%,24.5rem)}.hero-title{max-width:100%}
