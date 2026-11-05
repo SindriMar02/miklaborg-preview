@@ -545,18 +545,19 @@
     tl.from(big, { yPercent: 100, duration: 3.3, stagger: -0.5, ease: 'myEase' }, 0).from(small, { yPercent: 100, duration: 3.3, stagger: { amount: -1.2 }, ease: 'myEase' }, 0).from(red, { scaleX: 0, transformOrigin: '0 50%', duration: 3.3, ease: 'myEase' }, 0.6);
   }
 
-  /* preloader (RYXjuJOv.js:31286): letters drop right to left, the red bar closes to the centre, the navy panel lifts */
+  /* preloader (RYXjuJOv.js:31286): each line of the logo drops out through its own baseline (right to left), the red bar closes to the
+     centre, the whole mark is gone, THEN the navy panel lifts. Starts at once (no font wait, it is pure SVG); nothing may float over the photograph. */
   function preloader() {
     return new Promise(function (res) {
       var pre = q('.preloader'); if (!pre || !root.classList.contains('preloader-active')) { res(); return; }
       try { sessionStorage.setItem('mkPre', '1'); } catch (e) {}
-      var big = qa('.pre-svg .lg-big'), small = qa('.pre-svg .lg-small'), bar = q('.pre-svg .lg-red'), bgp = q('.pre-bg');
+      var big = qa('.pre-svg .lg-big'), small = qa('.pre-svg .lg-small'), bar = q('.pre-svg .lg-red'), bgp = q('.pre-bg'), mark = q('.pre-logo');
       var done = false; function fin() { if (done) return; done = true; res(); }
       var tl = gsap.timeline({ onComplete: function () { root.classList.remove('preloader-active'); fin(); } });
-      tl.to(small, { yPercent: 110, duration: 0.45, ease: 'power2.in', stagger: { amount: 0.64, from: 'end' } }, 0.3)
-        .to(big, { yPercent: 110, duration: 0.45, ease: 'power2.in', stagger: { amount: 0.64, from: 'end' } }, 0.3)
+      tl.to(small, { yPercent: 110, duration: 0.45, ease: 'power2.in', stagger: { amount: 0.64, from: 'end' } }, 0.25)
+        .to(big, { yPercent: 110, duration: 0.45, ease: 'power2.in', stagger: { amount: 0.64, from: 'end' } }, 0.25)
         .to(bar, { scaleX: 0.04, transformOrigin: '50% 50%', duration: 0.5, ease: 'myEase' }, '>')
-        .to(bar, { autoAlpha: 0, duration: 0.5, ease: 'power1.inOut' }, '+=0.05')
+        .to(mark, { autoAlpha: 0, duration: 0.5, ease: 'power1.inOut' }, '+=0.05')
         .to(bgp, { yPercent: -100, duration: 1, ease: 'myEase' }, '<0.4')
         .call(fin, null, '<');
       function skip() { tl.timeScale(5); } addEventListener('keydown', skip, { once: true }); pre.addEventListener('pointerdown', skip, { once: true });
@@ -588,7 +589,7 @@
   initLenis();
   var fontsReady = d.fonts && d.fonts.ready ? d.fonts.ready : Promise.resolve();
   var settled = fontsReady.then(function () { return new Promise(function (r) { requestAnimationFrame(function () { requestAnimationFrame(r); }); }); }).then(function () { return window.__mkVT ? window.__mkVT.catch(function () {}) : null; });
-  var introP = settled.then(function () { return page === 'home' ? preloader() : null; });
+  var introP = page === 'home' ? preloader() : settled.then(function () { return null; }); // the preloader never waits for fonts
   settled.then(function () { buildMotion(introP); });
   addEventListener('load', function () { ScrollTrigger.refresh(); });
   var rt = 0;
