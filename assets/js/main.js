@@ -392,7 +392,8 @@
     var over = false, past = false, hh = hd.offsetHeight;
     function apply() { hd.classList.toggle('is-over', over); hd.classList.toggle('has-bg', !over && past); }
     // ScrollTrigger callbacks only: no layout reads in a scroll handler
-    if (hero) ScrollTrigger.create({ trigger: hero, start: 'top top', end: 'bottom top+=' + Math.round(hh * 0.6), onToggle: function (st) { over = st.isActive; apply(); } });
+    // start at 'top bottom' (not 'top top'): at scroll 0 the hero top sits exactly on 'top top', which ScrollTrigger treats as not yet active, leaving a dark header over the photo
+    if (hero) ScrollTrigger.create({ trigger: hero, start: 'top bottom', end: 'bottom top+=' + Math.round(hh * 0.6), onToggle: function (st) { over = st.isActive; apply(); } });
     ScrollTrigger.create({ start: 24, end: 'max', onToggle: function (st) { past = st.isActive; apply(); } });
     var bc = q('.hd-bottom'); if (bc && hero) {
       ScrollTrigger.create({ trigger: hero, start: 'bottom 70%', onEnter: function () { go(bc, { autoAlpha: 1, y: 0, duration: 0.42, ease: 'myEase' }); }, onLeaveBack: function () { go(bc, { autoAlpha: 0, y: 20, duration: 0.42, ease: 'myEase' }); } });
