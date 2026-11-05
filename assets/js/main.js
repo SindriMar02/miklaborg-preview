@@ -329,14 +329,16 @@
       cards.forEach(function (c, j) {
         var to = S[rel(j, i)], from = S[rel(j, prevI)];
         gsap.killTweensOf(c);
-        if (!animate || R()) { gsap.set(c, to); return; }
+        // NEVER hand GSAP the shared state objects: gsap.set() writes duration:0 into the vars it is given, which silently made every later flip instant
+        if (!animate || R()) { gsap.set(c, Object.assign({}, to)); return; }
         var wasOff = (from === S.prev && to === S.next) || (from === S.next && to === S.prev);
-        if (wasOff) { gsap.set(c, to); return; } // jumps between the two off-screen slots are invisible (stack is clipped)
-        gsap.to(c, Object.assign({ duration: 1.2, ease: 'myEase', overwrite: true }, to));
+        if (wasOff) { gsap.set(c, Object.assign({}, to)); return; } // jumps between the two off-screen slots are invisible (stack is clipped)
+        gsap.to(c, Object.assign({}, to, { duration: 1.2, ease: 'myEase', overwrite: true }));
       });
       mark(i);
     }
-    OH = { go: function (dir) { apply(i + dir, true, dir); }, i: function () { return i; } };
+    var armed = false;
+    OH = { go: function (dir) { apply(i + dir, true, dir); }, i: function () { return i; }, arm: function () { if (armed) return; armed = true; start(); } };
     window.__mkOH = OH;
     apply(0, false); // initial
     function tick() { if (!paused && !userPaused && vis && !d.hidden && !R()) OH.go(1); }
@@ -344,12 +346,13 @@
     if (pbtn) pbtn.addEventListener('click', function () { userPaused = !userPaused; pbtn.setAttribute('aria-pressed', String(userPaused)); pbtn.setAttribute('aria-label', userPaused ? 'Hefja sjálfvirka skiptingu' : 'Stöðva sjálfvirka skiptingu'); if (userPaused) stop(); else start(); });
     if (R() && pbtn) pbtn.hidden = true;
     function stop() { clearInterval(timer); }
-    q('[data-oh-next]', box).addEventListener('click', function () { OH.go(1); start(); });
-    q('[data-oh-prev]', box).addEventListener('click', function () { OH.go(-1); start(); });
+    q('[data-oh-next]', box).addEventListener('click', function () { OH.go(1); if (armed) start(); });
+    q('[data-oh-prev]', box).addEventListener('click', function () { OH.go(-1); if (armed) start(); });
     box.addEventListener('mouseenter', function () { paused = true; }); box.addEventListener('mouseleave', function () { paused = false; });
     box.addEventListener('focusin', function () { paused = true; }); box.addEventListener('focusout', function () { paused = false; });
     if ('IntersectionObserver' in window) new IntersectionObserver(function (en) { vis = en[en.length - 1].isIntersecting; }).observe(box); // the newest record, not the first of a batch
-    start();
+    // autoplay starts after the hero intro has finished (see heroIntro), never during the reveal; failsafe if the intro never reports
+    setTimeout(function () { OH.arm(); }, 12000);
   }
 
   /* ---------------------------------------------------------------- motion layer */
@@ -402,7 +405,7 @@
     var title = q('[data-hero-title]'), p = q('[data-hero-p]'), card = q('[data-hero-card]'), cta = q('[data-hero-cta]');
     var sp = SplitText.create(title, { type: 'lines', mask: 'lines', aria: 'auto' });
     var em = qa('em', title), ch = em.length ? SplitText.create(em, { type: 'chars', aria: 'none' }) : null;
-    var tl = gsap.timeline({ paused: true });
+    var tl = gsap.timeline({ paused: true, onComplete: function () { if (window.__mkOH) window.__mkOH.arm(); } });
     tl.fromTo(sp.lines, { yPercent: 120 }, { yPercent: 0, duration: 1.2, stagger: 0.1, ease: 'myEase' }, 0);
     if (ch) tl.fromTo(ch.chars, { yPercent: 40, autoAlpha: 0, filter: 'blur(5px)' }, { yPercent: 0, autoAlpha: 1, filter: 'blur(0px)', duration: 1.2, stagger: 0.1, ease: 'myEase' }, 0.6);
     tl.fromTo(p, { autoAlpha: 0 }, { autoAlpha: 1, duration: 1.5, ease: 'myEase' }, 1.05)
@@ -574,7 +577,7 @@
         gsap.to(q('.hero-img'), { scale: 1.3, ease: 'none', scrollTrigger: { trigger: hs, start: 'top top', scrub: 1.4 } });
         gsap.to(q('.hero-ov'), { opacity: 0.9, ease: 'none', scrollTrigger: { trigger: hs, start: 'top top', scrub: 1.4 } });
         window.__mkHero = hi;
-        if (intro) intro.then(function () { hi.timeScale(1).play(); }); else hi.progress(1);
+        if (intro) intro.then(function () { hi.timeScale(1).play(); }); else { hi.progress(1); if (window.__mkOH) window.__mkOH.arm(); }
       } else {
         var ii = innerIntro(); if (ii) { if (intro) intro.then(function () { ii.play(); }); else ii.progress(1); }
       }
